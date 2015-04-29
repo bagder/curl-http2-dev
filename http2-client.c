@@ -131,8 +131,18 @@ int my_trace(CURL *handle, curl_infotype type,
 
 static void setup(CURL *hnd, int num)
 {
+  FILE *out;
+  char filename[128];
+
+  sprintf(filename, "dl-%d", num);
+
+  out = fopen(filename, "wb");
+
+  /* write to this file */
+  curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
+
   /* get the same URL for now */
-  curl_easy_setopt(hnd, CURLOPT_URL, "https://localhost:8443/");
+  curl_easy_setopt(hnd, CURLOPT_URL, "https://localhost:8443/index.html");
 
   /* send it verbose for max debuggaility */
   curl_easy_setopt(hnd, CURLOPT_VERBOSE, 1L);
