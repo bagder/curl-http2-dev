@@ -29,15 +29,14 @@
 /* curl stuff */
 #include <curl/curl.h>
 
-#define MAX_HANDLES 10
+#define NUM_HANDLES 2
 
-void *curl_hnd[MAX_HANDLES];
-int num_hnds=-1;
+void *curl_hnd[NUM_HANDLES];
 
 static int hnd2num(CURL *hnd)
 {
   int i;
-  for(i=0; i<num_hnds; i++) {
+  for(i=0; i< NUM_HANDLES; i++) {
     if(curl_hnd[i] == hnd)
       return i;
   }
@@ -156,8 +155,6 @@ static void setup(CURL *hnd, int num)
   curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 
   curl_hnd[num] = hnd;
-  if(num > num_hnds+1)
-    num_hnds = num+1;
 }
 
 /*
@@ -165,26 +162,22 @@ static void setup(CURL *hnd, int num)
  */
 int main(void)
 {
-  CURL *http_handle;
-  CURL *http_handle2;
+  CURL *easy[NUM_HANDLES];
   CURLM *multi_handle;
-
+  int i;
   int still_running; /* keep number of running handles */
-
-  http_handle = curl_easy_init();
-  http_handle2 = curl_easy_init();
-
-  /* set options */
-  setup(http_handle, 0);
-  /* set options */
-  setup(http_handle2, 1);
 
   /* init a multi stack */
   multi_handle = curl_multi_init();
 
-  /* add the individual transfers */
-  curl_multi_add_handle(multi_handle, http_handle);
-  curl_multi_add_handle(multi_handle, http_handle2);
+  for(i=0; i<NUM_HANDLES; i++) {
+    easy[i] = curl_easy_init();
+    /* set options */
+    setup(easy[i], i);
+
+    /* add the individual transfer */
+    curl_multi_add_handle(multi_handle, easy[i]);
+  }
 
   /* For now (at least) we use bit 1 in the pipelining option to switch on
      HTTP/2 multiplexing */
@@ -270,8 +263,8 @@ int main(void)
 
   curl_multi_cleanup(multi_handle);
 
-  curl_easy_cleanup(http_handle);
-  curl_easy_cleanup(http_handle2);
+  for(i=0; i<NUM_HANDLES; i++)
+    curl_easy_cleanup(easy[i]);
 
   return 0;
 }
