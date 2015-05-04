@@ -29,14 +29,17 @@
 /* curl stuff */
 #include <curl/curl.h>
 
-#define NUM_HANDLES 2
+#define NUM_HANDLES 1000
 
 void *curl_hnd[NUM_HANDLES];
+int num_transfers;
 
+/* a handle to number lookup, highly ineffective when we do many
+   transfers... */
 static int hnd2num(CURL *hnd)
 {
   int i;
-  for(i=0; i< NUM_HANDLES; i++) {
+  for(i=0; i< num_transfers; i++) {
     if(curl_hnd[i] == hnd)
       return i;
   }
@@ -163,17 +166,25 @@ static void setup(CURL *hnd, int num)
 /*
  * Simply download two files over HTTP/2, using the same physical connection!
  */
-int main(void)
+int main(int argc, char **argv)
 {
   CURL *easy[NUM_HANDLES];
   CURLM *multi_handle;
   int i;
   int still_running; /* keep number of running handles */
+  int num_transfers;
+
+  if(argc > 1)
+    /* if given a number, do that many transfers */
+    num_transfers = atoi(argv[1]);
+
+  if(!num_transfers || (num_transfers > NUM_HANDLES))
+    num_transfers = 3; /* a suitable low default */
 
   /* init a multi stack */
   multi_handle = curl_multi_init();
 
-  for(i=0; i<NUM_HANDLES; i++) {
+  for(i=0; i<num_transfers; i++) {
     easy[i] = curl_easy_init();
     /* set options */
     setup(easy[i], i);
@@ -266,7 +277,7 @@ int main(void)
 
   curl_multi_cleanup(multi_handle);
 
-  for(i=0; i<NUM_HANDLES; i++)
+  for(i=0; i<num_transfers; i++)
     curl_easy_cleanup(easy[i]);
 
   return 0;
