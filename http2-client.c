@@ -148,9 +148,6 @@ static void setup(CURL *hnd, int num)
 
   /* send it verbose for max debuggaility */
   curl_easy_setopt(hnd, CURLOPT_VERBOSE, 1L);
-
-  /* give us the headers in the regular body output */
-  curl_easy_setopt(hnd, CURLOPT_HEADER, 1L);
   curl_easy_setopt(hnd, CURLOPT_DEBUGFUNCTION, my_trace);
 
   /* HTTP/2 please */
