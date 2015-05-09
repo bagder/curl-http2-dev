@@ -29,6 +29,13 @@
 /* curl stuff */
 #include <curl/curl.h>
 
+#ifndef CURLPIPE_MULTIPLEX
+/* This little trick will just make sure that we don't enable pipelining for
+   libcurl's old enough to not have this symbol. It is _not_ defined to zero
+   in a recent libcurl header. */
+#define CURLPIPE_MULTIPLEX 0
+#endif
+
 #define NUM_HANDLES 1000
 
 void *curl_hnd[NUM_HANDLES];
@@ -192,7 +199,7 @@ int main(int argc, char **argv)
 
   /* For now (at least) we use bit 1 in the pipelining option to switch on
      HTTP/2 multiplexing */
-  curl_multi_setopt(multi_handle, CURLMOPT_PIPELINING, 2);
+  curl_multi_setopt(multi_handle, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX);
 
   /* We do HTTP/2 so let's stick to one connection per host */
   curl_multi_setopt(multi_handle, CURLMOPT_MAX_HOST_CONNECTIONS, 1L);
