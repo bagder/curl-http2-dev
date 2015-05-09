@@ -1,5 +1,5 @@
 #!/bin/sh
 
-./http2-client >dump 2>&1
+./http2-client 22 >dump 2>&1
 
 echo $?
