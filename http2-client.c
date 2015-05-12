@@ -31,8 +31,8 @@
 
 #ifndef CURLPIPE_MULTIPLEX
 /* This little trick will just make sure that we don't enable pipelining for
-   libcurl's old enough to not have this symbol. It is _not_ defined to zero
-   in a recent libcurl header. */
+   libcurls old enough to not have this symbol. It is _not_ defined to zero in
+   a recent libcurl header. */
 #define CURLPIPE_MULTIPLEX 0
 #endif
 
