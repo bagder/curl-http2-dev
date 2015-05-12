@@ -6,6 +6,8 @@ Requires a curl build from the curl repo, the `http2-multiplex` branch.
 Requires that you have a recent nghttp2 built and installed, including its
 servers (configure --enable-apps)
 
+We now use nghttpd's --echo-upload option, added in nghttp2's git commit 5da4998.
+
 # step-by-step
 
 1. edit the Makefile in this directory
