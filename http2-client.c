@@ -164,6 +164,11 @@ static void setup(CURL *hnd, int num)
   curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 
+#ifdef CURLPIPE_MULTIPLEX
+  /* wait for pipe connection to confirm */
+  curl_easy_setopt(hnd, CURLOPT_PIPEWAIT, 1L);
+#endif
+
   curl_hnd[num] = hnd;
 }
 
@@ -200,9 +205,6 @@ int main(int argc, char **argv)
   /* For now (at least) we use bit 1 in the pipelining option to switch on
      HTTP/2 multiplexing */
   curl_multi_setopt(multi_handle, CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX);
-
-  /* We do HTTP/2 so let's stick to one connection per host */
-  curl_multi_setopt(multi_handle, CURLMOPT_MAX_HOST_CONNECTIONS, 1L);
 
   /* we start some action by calling perform right away */
   curl_multi_perform(multi_handle, &still_running);
