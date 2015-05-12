@@ -12,14 +12,24 @@ LDFLAGS += -lpthread
 LIBCURL = -L$(CURLDIR)/lib/.libs/ -lcurl -L$$HOME/src/c-ares/.libs -lcares -lssh2 -lidn -lrtmp -lssl -lcrypto -ldl
 CFLAGS = -I$(CURLDIR)/include -g
 
+TARGETS=http2-client http2-upload
+
+all: $(TARGETS)
+
 http2-client: http2-client.o $(LIBCURL)
 	$(CC) -g -o $@ $< $(LIBCURL) $(LDFLAGS)
 
 http2-client.o: http2-client.c
 	$(CC) $(CFLAGS) -c $<
 
+http2-upload: http2-upload.o $(LIBCURL)
+	$(CC) -g -o $@ $< $(LIBCURL) $(LDFLAGS)
+
+http2-upload.o: http2-upload.c
+	$(CC) $(CFLAGS) -c $<
+
 clean:
-	rm -f http2-client.o http2-client
+	rm -f *.o $(TARGETS)
 
 $(LIBCURL):
 	(cd $(CURLDIR)/lib && make)
