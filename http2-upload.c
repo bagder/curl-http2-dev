@@ -20,7 +20,8 @@
  *
  ***************************************************************************/
 #include <stdio.h>
-#include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 /* somewhat unix-specific */
 #include <sys/time.h>
@@ -141,14 +142,30 @@ int my_trace(CURL *handle, curl_infotype type,
 static void setup(CURL *hnd, int num)
 {
   FILE *in;
+  FILE *out;
   char url[256];
+  char filename[128];
+  struct stat file_info;
+  curl_off_t uploadsize;
+
+  sprintf(filename, "dl-%d", num);
+  out = fopen(filename, "wb");
 
   sprintf(url, "https://localhost:8443/upload-%d", num);
 
+  /* get the file size of the local file */
+  stat("index.html", &file_info);
+  uploadsize = file_info.st_size;
+
   in = fopen("index.html", "rb");
+
+  /* write to this file */
+  curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
 
   /* read from this file */
   curl_easy_setopt(hnd, CURLOPT_READDATA, in);
+  /* provide the size of the upload */
+  curl_easy_setopt(hnd, CURLOPT_INFILESIZE_LARGE, uploadsize);
 
   /* send in the URL to store the upload as */
   curl_easy_setopt(hnd, CURLOPT_URL, url);
@@ -187,6 +204,8 @@ int main(int argc, char **argv)
 
   if(!num_transfers || (num_transfers > NUM_HANDLES))
     num_transfers = 3; /* a suitable low default */
+
+  curl_memdebug("memlog");
 
   /* init a multi stack */
   multi_handle = curl_multi_init();
