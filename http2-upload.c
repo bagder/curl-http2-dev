@@ -196,7 +196,6 @@ int main(int argc, char **argv)
   CURLM *multi_handle;
   int i;
   int still_running; /* keep number of running handles */
-  int num_transfers;
   const char *filename = "index.html";
 
   if(argc > 1)

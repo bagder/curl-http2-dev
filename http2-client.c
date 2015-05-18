@@ -180,7 +180,6 @@ int main(int argc, char **argv)
   CURLM *multi_handle;
   int i;
   int still_running; /* keep number of running handles */
-  int num_transfers;
 
   if(argc > 1)
     /* if given a number, do that many transfers */
