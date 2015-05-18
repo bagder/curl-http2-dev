@@ -139,7 +139,7 @@ int my_trace(CURL *handle, curl_infotype type,
   return 0;
 }
 
-static void setup(CURL *hnd, int num)
+static void setup(CURL *hnd, int num, const char *upload)
 {
   FILE *in;
   FILE *out;
@@ -154,10 +154,10 @@ static void setup(CURL *hnd, int num)
   sprintf(url, "https://localhost:8443/upload-%d", num);
 
   /* get the file size of the local file */
-  stat("index.html", &file_info);
+  stat(upload, &file_info);
   uploadsize = file_info.st_size;
 
-  in = fopen("index.html", "rb");
+  in = fopen(upload, "rb");
 
   /* write to this file */
   curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
@@ -197,10 +197,15 @@ int main(int argc, char **argv)
   int i;
   int still_running; /* keep number of running handles */
   int num_transfers;
+  const char *filename = "index.html";
 
   if(argc > 1)
     /* if given a number, do that many transfers */
     num_transfers = atoi(argv[1]);
+
+  if(argc > 2)
+    /* if given a file name, upload this! */
+    filename = argv[2];
 
   if(!num_transfers || (num_transfers > NUM_HANDLES))
     num_transfers = 3; /* a suitable low default */
@@ -213,7 +218,7 @@ int main(int argc, char **argv)
   for(i=0; i<num_transfers; i++) {
     easy[i] = curl_easy_init();
     /* set options */
-    setup(easy[i], i);
+    setup(easy[i], i, filename);
 
     /* add the individual transfer */
     curl_multi_add_handle(multi_handle, easy[i]);
