@@ -188,7 +188,7 @@ static void setup(CURL *hnd, int num, const char *upload)
 }
 
 /*
- * Simply download two files over HTTP/2, using the same physical connection!
+ * Upload all files over HTTP/2, using the same physical connection!
  */
 int main(int argc, char **argv)
 {
