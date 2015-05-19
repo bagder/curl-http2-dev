@@ -59,7 +59,6 @@ void dump(const char *text, int num, unsigned char *ptr, size_t size,
 {
   size_t i;
   size_t c;
-
   unsigned int width=0x10;
 
   if(nohex)
@@ -109,9 +108,27 @@ int my_trace(CURL *handle, curl_infotype type,
   int num = hnd2num(handle);
   (void)handle; /* prevent compiler warning */
   (void)userp;
+  char timebuf[20];
+  {
+    static time_t epoch_offset;
+    static int    known_offset;
+    struct timeval tv;
+    time_t secs;
+    struct tm *now;
+    gettimeofday(&tv, NULL);
+    if(!known_offset) {
+      epoch_offset = time(NULL) - tv.tv_sec;
+      known_offset = 1;
+    }
+    secs = epoch_offset + tv.tv_sec;
+    now = localtime(&secs);  /* not thread safe but we don't care */
+    snprintf(timebuf, sizeof(timebuf), "%02d:%02d:%02d.%06ld",
+             now->tm_hour, now->tm_min, now->tm_sec, (long)tv.tv_usec);
+  }
+
   switch (type) {
   case CURLINFO_TEXT:
-    fprintf(stderr, "== %d Info: %s", num, data);
+    fprintf(stderr, "%s [%d] Info: %s", timebuf, num, data);
   default: /* in case a new one is introduced to shock us */
     return 0;
 
