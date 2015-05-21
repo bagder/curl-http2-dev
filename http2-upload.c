@@ -156,6 +156,38 @@ int my_trace(CURL *handle, curl_infotype type,
   return 0;
 }
 
+struct input {
+  FILE *in;
+  size_t bytes_read; /* count up */
+  CURL *hnd;
+};
+
+static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
+{
+  struct input *i = userp;
+  int num;
+
+  size_t retcode = fread(ptr, size, nmemb, i->in);
+
+  i->bytes_read += retcode;
+
+  num = hnd2num(i->hnd);
+
+  fprintf(stderr, "read_callback [%d] read %zu"
+          ", max %u total %zu\n",
+          num, retcode, size*nmemb, i->bytes_read);
+
+  if(!retcode) {
+    int err = ferror(i->in);
+    int eof = feof(i->in);
+    fprintf(stderr, "read_callback: ferror = %d feof = %d\n", err, eof);
+  }
+
+  return retcode;
+}
+
+struct input indata[NUM_HANDLES];
+
 static void setup(CURL *hnd, int num, const char *upload)
 {
   FILE *in;
@@ -174,13 +206,16 @@ static void setup(CURL *hnd, int num, const char *upload)
   stat(upload, &file_info);
   uploadsize = file_info.st_size;
 
-  in = fopen(upload, "rb");
+  indata[num].in = fopen(upload, "rb");
+  indata[num].hnd = hnd;
 
   /* write to this file */
   curl_easy_setopt(hnd, CURLOPT_WRITEDATA, out);
 
+  /* we want to use our own read function */
+  curl_easy_setopt(hnd, CURLOPT_READFUNCTION, read_callback);
   /* read from this file */
-  curl_easy_setopt(hnd, CURLOPT_READDATA, in);
+  curl_easy_setopt(hnd, CURLOPT_READDATA, &indata[num]);
   /* provide the size of the upload */
   curl_easy_setopt(hnd, CURLOPT_INFILESIZE_LARGE, uploadsize);
 
