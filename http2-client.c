@@ -20,6 +20,7 @@
  *
  ***************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
 
 /* somewhat unix-specific */
 #include <sys/time.h>
@@ -49,6 +50,7 @@ static int hnd2num(CURL *hnd)
     if(curl_hnd[i] == hnd)
       return i;
   }
+  return 0; /* weird, but just a fail-safe */
 }
 
 static

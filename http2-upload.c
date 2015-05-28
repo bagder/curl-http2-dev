@@ -20,6 +20,7 @@
  *
  ***************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -51,6 +52,7 @@ static int hnd2num(CURL *hnd)
     if(curl_hnd[i] == hnd)
       return i;
   }
+  return 0; /* weird, but just a fail-safe */
 }
 
 static
@@ -104,27 +106,27 @@ int my_trace(CURL *handle, curl_infotype type,
              char *data, size_t size,
              void *userp)
 {
+  char timebuf[20];
   const char *text;
   int num = hnd2num(handle);
+  static time_t epoch_offset;
+  static int    known_offset;
+  struct timeval tv;
+  time_t secs;
+  struct tm *now;
+
   (void)handle; /* prevent compiler warning */
   (void)userp;
-  char timebuf[20];
-  {
-    static time_t epoch_offset;
-    static int    known_offset;
-    struct timeval tv;
-    time_t secs;
-    struct tm *now;
-    gettimeofday(&tv, NULL);
-    if(!known_offset) {
-      epoch_offset = time(NULL) - tv.tv_sec;
-      known_offset = 1;
-    }
-    secs = epoch_offset + tv.tv_sec;
-    now = localtime(&secs);  /* not thread safe but we don't care */
-    snprintf(timebuf, sizeof(timebuf), "%02d:%02d:%02d.%06ld",
-             now->tm_hour, now->tm_min, now->tm_sec, (long)tv.tv_usec);
+
+  gettimeofday(&tv, NULL);
+  if(!known_offset) {
+    epoch_offset = time(NULL) - tv.tv_sec;
+    known_offset = 1;
   }
+  secs = epoch_offset + tv.tv_sec;
+  now = localtime(&secs);  /* not thread safe but we don't care */
+  snprintf(timebuf, sizeof(timebuf), "%02d:%02d:%02d.%06ld",
+           now->tm_hour, now->tm_min, now->tm_sec, (long)tv.tv_usec);
 
   switch (type) {
   case CURLINFO_TEXT:
@@ -165,24 +167,8 @@ struct input {
 static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
 {
   struct input *i = userp;
-  int num;
-
   size_t retcode = fread(ptr, size, nmemb, i->in);
-
   i->bytes_read += retcode;
-
-  num = hnd2num(i->hnd);
-
-  fprintf(stderr, "read_callback [%d] read %zu"
-          ", max %u total %zu\n",
-          num, retcode, size*nmemb, i->bytes_read);
-
-  if(!retcode) {
-    int err = ferror(i->in);
-    int eof = feof(i->in);
-    fprintf(stderr, "read_callback: ferror = %d feof = %d\n", err, eof);
-  }
-
   return retcode;
 }
 
@@ -190,7 +176,6 @@ struct input indata[NUM_HANDLES];
 
 static void setup(CURL *hnd, int num, const char *upload)
 {
-  FILE *in;
   FILE *out;
   char url[256];
   char filename[128];
@@ -260,8 +245,6 @@ int main(int argc, char **argv)
 
   if(!num_transfers || (num_transfers > NUM_HANDLES))
     num_transfers = 3; /* a suitable low default */
-
-  curl_memdebug("memlog");
 
   /* init a multi stack */
   multi_handle = curl_multi_init();
